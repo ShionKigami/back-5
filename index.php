@@ -205,6 +205,13 @@ else {
 
             $del_stmt = $db->prepare("DELETE FROM user_languages WHERE user_id = ?");
             $del_stmt->execute([$user_id]);
+            
+            $db->commit();
+            
+            setcookie('save', '1', time() + 30 * 24 * 60 * 60);
+            
+            header('Location: index.php');
+            exit();
 
         } else {
             $login = 'user_' . rand(1000, 9999) . uniqid();
@@ -224,27 +231,21 @@ else {
             ]);
 
             $user_id = $db->lastInsertId();
+
+            $lang_stmt = $db->prepare("INSERT INTO user_languages (user_id, language) VALUES (?, ?)");
+            foreach ($_POST['languages'] as $lang) {
+                $lang_stmt->execute([$user_id, $lang]);
+            }
+
+            $db->commit();
             
-            $_SESSION['login'] = $login;
-            $_SESSION['uid'] = $user_id;
-        }
-
-        $lang_stmt = $db->prepare("INSERT INTO user_languages (user_id, language) VALUES (?, ?)");
-        foreach ($_POST['languages'] as $lang) {
-            $lang_stmt->execute([$user_id, $lang]);
-        }
-
-        $db->commit();
-
-        setcookie('save', '1', time() + 30 * 24 * 60 * 60);
-
-        if (!$is_update) {
+            setcookie('save', '1', time() + 30 * 24 * 60 * 60);
             setcookie('login', $login, time() + 30 * 24 * 60 * 60);
             setcookie('pass', $pass, time() + 30 * 24 * 60 * 60);
+            
+            header('Location: index.php');
+            exit();
         }
-
-        header('Location: index.php');
-        exit();
 
     } catch (PDOException $e) {
         $db->rollBack();
