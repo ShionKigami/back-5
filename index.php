@@ -9,6 +9,8 @@ $db = new PDO('mysql:host=localhost;dbname=u82624', $user, $pass, [
 ]);
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    session_start();
+    
     $messages = [];
     $errors = [];
     $values = [];
@@ -46,10 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $values['languages'] = empty($_COOKIE['languages_value']) ? [] : explode('|', strip_tags($_COOKIE['languages_value']));
     $values['contract'] = empty($_COOKIE['contract_value']) ? '' : strip_tags($_COOKIE['contract_value']);
 
-    $is_authenticated = false;
-    if (empty($errors) && !empty($_COOKIE[session_name()]) && session_start() && !empty($_SESSION['login'])) {
-        $is_authenticated = true;
-        
+    if (empty($errors) && !empty($_SESSION['login'])) {
         try {
             $stmt = $db->prepare("SELECT id, name, phone, email, birthdate, sex, biography FROM users WHERE login = ?");
             $stmt->execute([$_SESSION['login']]);
