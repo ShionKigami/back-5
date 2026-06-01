@@ -44,16 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             
             <form action="" method="post">
                 <div class="form-group">
-                    <label for="login">👤 Логин</label>
+                    <label for="login">Логин</label>
                     <input name="login" id="login" type="text" required />
                 </div>
                 
                 <div class="form-group">
-                    <label for="pass">🔒 Пароль</label>
+                    <label for="pass">Пароль</label>
                     <input name="pass" id="pass" type="password" required />
                 </div>
                 
-                <button type="submit" class="login-btn">🚪 Войти</button>
+                <button type="submit" class="login-btn">Войти</button>
             </form>
             
             <a href="index.php" class="back-link">← На главную</a>
