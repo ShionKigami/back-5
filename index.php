@@ -1,9 +1,9 @@
 <?php
 header('Content-Type: text/html; charset=UTF-8');
 
-$user = 'u82197';
-$pass = '6410666';
-$db = new PDO('mysql:host=localhost;dbname=u82197', $user, $pass, [
+$user = 'u82624';
+$pass = '8440989';
+$db = new PDO('mysql:host=localhost;dbname=u82624', $user, $pass, [
     PDO::ATTR_PERSISTENT => true,
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 ]);
@@ -49,11 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (empty($errors) && !empty($_COOKIE[session_name()]) && session_start() && !empty($_SESSION['login'])) {
    
         try {
-            $stmt = $db->prepare("SELECT name, phone, email, birthdate, sex, biography FROM users WHERE id = ?");
-            $stmt->execute([$_SESSION['uid']]);
+            $stmt = $db->prepare("SELECT id, name, phone, email, birthdate, sex, biography FROM users WHERE login = ?");
+            $stmt->execute([$_SESSION['login']]);
             $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($userData) {
+                $_SESSION['uid'] = $userData['id']; // Убедимся, что uid установлен
                 $values['name'] = strip_tags($userData['name']);
                 $values['phone'] = strip_tags($userData['phone']);
                 $values['email'] = strip_tags($userData['email']);
@@ -62,14 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 $values['contract'] = '1'; 
 
                 $lang_stmt = $db->prepare("SELECT language FROM user_languages WHERE user_id = ?");
-                $lang_stmt->execute([$_SESSION['uid']]);
+                $lang_stmt->execute([$userData['id']]);
                 $values['languages'] = $lang_stmt->fetchAll(PDO::FETCH_COLUMN);
             }
         } catch (PDOException $e) {
             $messages[] = '<div class="error">Ошибка загрузки данных: ' . $e->getMessage() . '</div>';
         }
     }
-
 
     setcookie('name_value', '', 100000);
     setcookie('phone_value', '', 100000);
@@ -84,6 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 }
 else {
     $errors = FALSE;
+
+    // ВАЖНО: Сессию нужно стартовать ДО использования $_SESSION
+    session_start();
 
     if (empty($_POST['name'])) {
         setcookie('name_error', '1', time() + 24 * 60 * 60);
@@ -120,8 +123,6 @@ else {
         } else {
             setcookie('birthdate_value', $_POST['birthdate'], time() + 30 * 24 * 60 * 60);
         }
-    } else {
-       
     }
 
     $allowed_genders = ['male', 'female'];
@@ -151,7 +152,6 @@ else {
             setcookie('languages_error', '1', time() + 24 * 60 * 60);
             $errors = TRUE;
         } else {
-            
             setcookie('languages_value', implode('|', $_POST['languages']), time() + 30 * 24 * 60 * 60);
         }
     }
@@ -162,7 +162,6 @@ else {
     } else {
         setcookie('contract_value', '1', time() + 30 * 24 * 60 * 60);
     }
-
 
     if ($errors) {
         header('Location: index.php');
@@ -175,7 +174,8 @@ else {
     }
 
     $is_update = false;
-    if (!empty($_COOKIE[session_name()]) && session_start() && !empty($_SESSION['login'])) {
+    // Проверяем авторизацию
+    if (!empty($_SESSION['login'])) {
         $is_update = true;
     }
 
@@ -183,6 +183,17 @@ else {
         $db->beginTransaction();
 
         if ($is_update) {
+            // Сначала проверим, существует ли пользователь
+            $check_stmt = $db->prepare("SELECT id FROM users WHERE login = ?");
+            $check_stmt->execute([$_SESSION['login']]);
+            $existing_user = $check_stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$existing_user) {
+                throw new Exception("Пользователь не найден");
+            }
+            
+            $user_id = $existing_user['id'];
+            
             $stmt = $db->prepare("UPDATE users SET name = ?, phone = ?, email = ?, birthdate = ?, sex = ?, biography = ? WHERE id = ?");
             $stmt->execute([
                 $_POST['name'],
@@ -191,20 +202,16 @@ else {
                 $_POST['birthdate'] ?? null,
                 $_POST['sex'],
                 $_POST['biography'] ?? null,
-                $_SESSION['uid']
+                $user_id
             ]);
 
+            // Удаляем старые языки
             $del_stmt = $db->prepare("DELETE FROM user_languages WHERE user_id = ?");
-            $del_stmt->execute([$_SESSION['uid']]);
-
-            $user_id = $_SESSION['uid'];
+            $del_stmt->execute([$user_id]);
 
         } else {
-           
             $login = 'user_' . rand(1000, 9999) . uniqid();
-
             $pass = substr(md5(uniqid(rand(), true)), 0, 8);
-
             $pass_hash = md5($pass);
 
             $stmt = $db->prepare("INSERT INTO users (name, phone, email, birthdate, sex, biography, login, pass_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -220,8 +227,13 @@ else {
             ]);
 
             $user_id = $db->lastInsertId();
+            
+            // Сохраняем логин и пароль для нового пользователя
+            $_SESSION['login'] = $login;
+            $_SESSION['uid'] = $user_id;
         }
 
+        // Вставляем языки (теперь user_id точно существует)
         $lang_stmt = $db->prepare("INSERT INTO user_languages (user_id, language) VALUES (?, ?)");
         foreach ($_POST['languages'] as $lang) {
             $lang_stmt->execute([$user_id, $lang]);
@@ -229,12 +241,11 @@ else {
 
         $db->commit();
 
-        setcookie('save', '1');
+        setcookie('save', '1', time() + 30 * 24 * 60 * 60);
 
         if (!$is_update) {
-   
-            setcookie('login', $login);
-            setcookie('pass', $pass);
+            setcookie('login', $login, time() + 30 * 24 * 60 * 60);
+            setcookie('pass', $pass, time() + 30 * 24 * 60 * 60);
         }
 
         header('Location: index.php');
@@ -243,8 +254,12 @@ else {
     } catch (PDOException $e) {
         $db->rollBack();
         die('Ошибка базы данных: ' . $e->getMessage());
+    } catch (Exception $e) {
+        $db->rollBack();
+        die('Ошибка: ' . $e->getMessage());
     }
 }
+
 function getErrorMessage($field) {
     $messages = [
         'name' => 'Введите корректное имя.',
@@ -257,5 +272,4 @@ function getErrorMessage($field) {
     ];
     return $messages[$field] ?? 'Неизвестная ошибка.';
 }
-
 ?>
