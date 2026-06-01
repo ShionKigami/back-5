@@ -16,6 +16,20 @@
     </style>
 </head>
 <body>
+    
+<?php if (!empty($_SESSION['login'])): ?>
+    <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+        <p>Вы авторизованы как: <strong><?php echo htmlspecialchars($_SESSION['login']); ?></strong></p>
+        <form method="POST" action="logout.php" style="display: inline;">
+            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer;">
+                Выйти
+            </button>
+        </form>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+            Выход из системы не удалит ваши данные. Вы сможете войти снова с логином и паролем, которые получили при регистрации.
+        </p>
+    </div>
+<?php endif; ?>
 
 <?php
 if (!empty($messages)) {
