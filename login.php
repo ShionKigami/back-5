@@ -23,28 +23,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     <html lang="ru">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Вход в систему</title>
-        <style>
-            .error-message { color: red; margin-top: 10px; }
-        </style>
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
-        <h2>Вход в личный кабинет</h2>
-        <form action="" method="post">
-            <label for="login">Логин:</label>
-            <input name="login" id="login" type="text" required /><br/><br/>
-            <label for="pass">Пароль:</label>
-            <input name="pass" id="pass" type="password" required /><br/><br/>
-            <input type="submit" value="Войти" />
-        </form>
-        <?php
-        if (!empty($_COOKIE['login_error'])) {
-            echo '<p class="error-message">Неверный логин или пароль.</p>';
-            setcookie('login_error', '', 100000); 
-        }
-        ?>
-        <br/>
-        <a href="index.php">На главную</a>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Вход в личный кабинет</h1>
+            <p>Введите ваш логин и пароль для входа</p>
+        </div>
+        
+        <div class="form-content">
+            <?php
+            if (!empty($_COOKIE['login_error'])) {
+                echo '<div class="error-message">❌ Неверный логин или пароль.</div>';
+                setcookie('login_error', '', 100000); 
+            }
+            ?>
+            
+            <form action="" method="post">
+                <div class="form-group">
+                    <label for="login">👤 Логин</label>
+                    <input name="login" id="login" type="text" required />
+                </div>
+                
+                <div class="form-group">
+                    <label for="pass">🔒 Пароль</label>
+                    <input name="pass" id="pass" type="password" required />
+                </div>
+                
+                <button type="submit" class="login-btn">🚪 Войти</button>
+            </form>
+            
+            <a href="index.php" class="back-link">← На главную</a>
+        </div>
+    </div>
     </body>
     </html>
     <?php
@@ -55,21 +69,17 @@ else {
     $pass_input = $_POST['pass'] ?? '';
 
     if (empty($login_input) || empty($pass_input)) {
-       
         setcookie('login_error', '1', time() + 24 * 60 * 60);
         header('Location: login.php');
         exit();
     }
 
     try {
-     
         $stmt = $db->prepare("SELECT id, login, pass_hash FROM users WHERE login = ?");
         $stmt->execute([$login_input]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        
         if ($user && md5($pass_input) === $user['pass_hash']) {
-       
             if (!$session_started) {
                 session_start();
             }
@@ -79,7 +89,6 @@ else {
             header('Location: index.php');
             exit();
         } else {
-            
             setcookie('login_error', '1', time() + 24 * 60 * 60);
             header('Location: login.php');
             exit();
