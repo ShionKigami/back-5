@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Форма </title>
+    <title>Форма</title>
     <style>
         .error {
             border: 2px solid red;
@@ -13,27 +13,42 @@
             font-weight: bold;
             margin-bottom: 5px;
         }
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
     </style>
 </head>
 <body>
-    
-<?php if (!empty($_SESSION['login'])): ?>
+
+<?php if (isset($_SESSION) && !empty($_SESSION['login'])): ?>
+    <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
         <p>Вы авторизованы как: <strong><?php echo htmlspecialchars($_SESSION['login']); ?></strong></p>
         <form method="POST" action="logout.php" style="display: inline;">
             <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer;">
                 Выйти
             </button>
         </form>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
             Выход из системы не удалит ваши данные. Вы сможете войти снова с логином и паролем, которые получили при регистрации.
         </p>
     </div>
+    <hr>
 <?php endif; ?>
 
 <?php
 if (!empty($messages)) {
     print('<div id="messages">');
     foreach ($messages as $message) {
-        print($message);
+        if (strpos($message, 'Результаты сохранены') !== false) {
+            print('<div class="success-message">' . $message . '</div>');
+        } else {
+            print($message);
+        }
     }
     print('</div>');
 }
