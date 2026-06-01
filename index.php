@@ -1,9 +1,9 @@
 <?php
 header('Content-Type: text/html; charset=UTF-8');
 
-$user = 'u82624';
-$pass = '8440989';
-$db = new PDO('mysql:host=localhost;dbname=u82624', $user, $pass, [
+$user = 'u82197';
+$pass = '6410666';
+$db = new PDO('mysql:host=localhost;dbname=u82197', $user, $pass, [
     PDO::ATTR_PERSISTENT => true,
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 ]);
